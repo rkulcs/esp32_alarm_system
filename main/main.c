@@ -69,7 +69,7 @@ void init()
     gpio_install_isr_service(0);
     gpio_isr_handler_add(PIN_BUTTON, button_interrupt_handler, NULL);
 
-    sm.state = SETUP;
+    sm.state = SENSING;
 
     xTaskCreate(&sm_task_handler, "StateMachine", TASK_STACK_DEPTH, NULL, 
         SM_TASK_PRIORITY, NULL);
@@ -81,6 +81,8 @@ void app_main(void)
 
     while (1) 
     {
+        double distance_cm = sensor_get_distance_in_cm();
+        printf("%f\n", distance_cm);
         vTaskDelay(100);
     }
 }
