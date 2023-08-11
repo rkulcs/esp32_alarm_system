@@ -109,7 +109,7 @@ double sensor_get_distance_in_cm()
     gpio_set_level(PIN_TRIG, 0);
 
     // Wait for end of Echo signal
-    if (xTaskNotifyWait(0x00, ULONG_MAX, &ticks, pdMS_TO_TICKS(1000)) == pdTRUE)
+    if (xTaskNotifyWait(0, UINT32_MAX, &ticks, pdMS_TO_TICKS(1000)) == pdTRUE)
     {
         // Get the width of the Echo pulse in microseconds
         double pulse_width_us = ((double) ticks) / ((double) esp_clk_apb_freq()) * 1000000.0;

@@ -3,6 +3,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "circular_buffer.h"
 #include "alarm.h"
 #include "sensor.h"
 
@@ -60,6 +61,7 @@ void init()
 {
     set_up_alarm();
     set_up_sensor();
+    init_circular_buffer(&distance_buffer);
 
     gpio_reset_pin(PIN_BUTTON);
     gpio_set_direction(PIN_BUTTON, GPIO_MODE_INPUT);
