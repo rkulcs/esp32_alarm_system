@@ -3,12 +3,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "circular_buffer.h"
+
 #include "alarm.h"
 #include "sensor.h"
 
-static const int TASK_STACK_DEPTH = 16384;
-static const int SM_TASK_PRIORITY = 1;
 static const int TICK_PERIOD_MS = 250 / portTICK_PERIOD_MS;
 
 static const int PIN_BUTTON = 5;
@@ -21,40 +19,12 @@ typedef enum
     DISARMED
 } State;
 
-typedef struct
-{
-    State state;
-} StateMachine;
-
-StateMachine sm;
+State state;
 
 static void IRAM_ATTR button_interrupt_handler(void* args)
 {
-    if (sm.state == ALARMED)
-        sm.state = DISARMED;
-}
-
-void sm_task_handler(void* args)
-{
-    while (true)
-    {
-        switch (sm.state)
-        {
-        case SETUP:
-            break;
-        case SENSING:
-            break;
-        case ALARMED:
-            alert_user();
-            break;
-        case DISARMED:
-            break;
-        default:
-            break;
-        }
-
-        vTaskDelay(TICK_PERIOD_MS);
-    }
+    if (state == ALARMED)
+        state = DISARMED;
 }
 
 void init()
@@ -71,20 +41,32 @@ void init()
     gpio_install_isr_service(0);
     gpio_isr_handler_add(PIN_BUTTON, button_interrupt_handler, NULL);
 
-    sm.state = SENSING;
-
-    xTaskCreate(&sm_task_handler, "StateMachine", TASK_STACK_DEPTH, NULL, 
-        SM_TASK_PRIORITY, NULL);
+    state = SETUP;
 }
 
 void app_main(void)
 {
     init();
 
-    while (1) 
+    while (true)
     {
-        double distance_cm = sensor_get_distance_in_cm();
-        printf("%f\n", distance_cm);
-        vTaskDelay(100);
+        switch (state)
+        {
+        case SETUP:
+            sensor_set_safe_distances();
+            state = SENSING;
+            break;
+        case SENSING:
+            break;
+        case ALARMED:
+            alert_user();
+            break;
+        case DISARMED:
+            break;
+        default:
+            break;
+        }
+
+        vTaskDelay(TICK_PERIOD_MS);
     }
 }

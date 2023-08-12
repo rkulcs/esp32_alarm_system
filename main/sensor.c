@@ -1,12 +1,5 @@
 #include "sensor.h"
 
-#include "esp_log.h"
-#include "esp_private/esp_clk.h"
-#include "driver/gpio.h"
-#include "driver/mcpwm_cap.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
 static const char* TAG = "Sensor";
 
 static const int PIN_TRIG = 13;
@@ -17,9 +10,12 @@ static const int INPUT_SIGNAL_PRESCALE = 1;
 static const uint64_t TRIG_PIN_BITMASK = 1ULL << PIN_TRIG;
 
 static const int TRIG_PERIOD_US = 10;
+static const int SENSOR_TIMEOUT_MS = 250 / portTICK_PERIOD_MS;
 
 // The approximate number of microseconds needed by sound to travel 1 cm at room temperature.
 static const double SOUND_US_PER_CM = 58.0;
+
+static const int SENSOR_SETUP_NUM_SAMPLES = 8;
 
 struct
 {
@@ -30,6 +26,9 @@ struct
     TaskHandle_t task_handle;
     mcpwm_capture_event_callbacks_t callbacks;
     gpio_config_t gpio_conf;
+
+    double min_safe_distance;
+    double max_safe_distance;
 } sensor;
 
 static bool sensor_callback(mcpwm_cap_channel_handle_t channel, 
@@ -97,6 +96,33 @@ void set_up_sensor()
     // Set up capture timer
     ESP_ERROR_CHECK(mcpwm_capture_timer_enable(sensor.timer));
     ESP_ERROR_CHECK(mcpwm_capture_timer_start(sensor.timer));
+}
+
+void sensor_set_safe_distances()
+{
+    sensor.min_safe_distance = __INT_MAX__;
+    sensor.max_safe_distance = 0;
+
+    for (int i = 0; i < SENSOR_SETUP_NUM_SAMPLES; i++)
+    {
+        double distance_cm = sensor_get_distance_in_cm();
+
+        if (distance_cm < sensor.min_safe_distance)
+            sensor.min_safe_distance = distance_cm;
+        
+        if (distance_cm > sensor.max_safe_distance)
+            sensor.max_safe_distance = distance_cm;
+
+        vTaskDelay(SENSOR_TIMEOUT_MS);
+    }
+
+    ESP_LOGI(TAG, "Minimum safe distance: %.2f cm", sensor.min_safe_distance);
+    ESP_LOGI(TAG, "Maximum safe distance: %.2f cm", sensor.max_safe_distance);
+}
+
+void sensor_detect_intrusion()
+{
+    
 }
 
 double sensor_get_distance_in_cm()
