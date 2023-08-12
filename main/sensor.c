@@ -15,7 +15,9 @@ static const int SENSOR_TIMEOUT_MS = 250 / portTICK_PERIOD_MS;
 // The approximate number of microseconds needed by sound to travel 1 cm at room temperature.
 static const double SOUND_US_PER_CM = 58.0;
 
-static const int SENSOR_SETUP_NUM_SAMPLES = 8;
+static const int SENSOR_SETUP_NUM_SAMPLES = 16;
+static const int MAX_OUT_OF_RANGE_DISTANCES = 2;
+static const int SENSING_NUM_SAMPLES = 4;
 
 struct
 {
@@ -120,9 +122,30 @@ void sensor_set_safe_distances()
     ESP_LOGI(TAG, "Maximum safe distance: %.2f cm", sensor.max_safe_distance);
 }
 
-void sensor_detect_intrusion()
+bool sensor_detect_intrusion()
 {
-    
+    int num_out_of_range_distances = 0;
+
+    for (int i = 0; i < SENSING_NUM_SAMPLES; i++)
+    {
+        double distance_cm = sensor_get_distance_in_cm();
+
+        // Ignore invalid samples
+        if (distance_cm == -1.0)
+            continue;
+
+        if (distance_cm < sensor.min_safe_distance)
+            num_out_of_range_distances++;
+        else if (distance_cm > sensor.max_safe_distance)
+            num_out_of_range_distances++;
+
+        if (num_out_of_range_distances >= MAX_OUT_OF_RANGE_DISTANCES)
+            return true;
+
+        vTaskDelay(SENSOR_TIMEOUT_MS);
+    }
+
+    return false;
 }
 
 double sensor_get_distance_in_cm()

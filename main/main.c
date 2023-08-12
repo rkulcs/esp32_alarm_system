@@ -3,7 +3,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "circular_buffer.h"
 #include "alarm.h"
 #include "sensor.h"
 
@@ -31,7 +30,6 @@ void init()
 {
     set_up_alarm();
     set_up_sensor();
-    init_circular_buffer(&distance_buffer);
 
     gpio_reset_pin(PIN_BUTTON);
     gpio_set_direction(PIN_BUTTON, GPIO_MODE_INPUT);
@@ -57,11 +55,15 @@ void app_main(void)
             state = SENSING;
             break;
         case SENSING:
+            if (sensor_detect_intrusion())
+                state = ALARMED;
             break;
         case ALARMED:
             alert_user();
             break;
         case DISARMED:
+            vTaskDelay(3000 / portTICK_PERIOD_MS);
+            state = SETUP;
             break;
         default:
             break;

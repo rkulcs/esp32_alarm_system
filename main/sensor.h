@@ -7,8 +7,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "circular_buffer.h"
-
 void set_up_sensor();
 void sensor_set_safe_distances();
+bool sensor_detect_intrusion();
 double sensor_get_distance_in_cm();
