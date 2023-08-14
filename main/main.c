@@ -5,10 +5,12 @@
 
 #include "alarm.h"
 #include "sensor.h"
+#include "lcd1602.h"
 
 static const int TICK_PERIOD_MS = 250 / portTICK_PERIOD_MS;
+static const int DISARMED_PERIOD_MS = 3000 / portTICK_PERIOD_MS;
 
-static const int PIN_BUTTON = 5;
+static const int PIN_BUTTON = 18;
 
 typedef enum
 {
@@ -31,11 +33,14 @@ void init()
     set_up_alarm();
     set_up_sensor();
 
+    i2c_init();
+    lcd_init();
+
     gpio_reset_pin(PIN_BUTTON);
     gpio_set_direction(PIN_BUTTON, GPIO_MODE_INPUT);
     gpio_pullup_dis(PIN_BUTTON);
     gpio_pulldown_en(PIN_BUTTON);
-    gpio_set_intr_type(PIN_BUTTON, GPIO_INTR_POSEDGE);
+    gpio_set_intr_type(PIN_BUTTON, GPIO_INTR_LOW_LEVEL);
     gpio_install_isr_service(0);
     gpio_isr_handler_add(PIN_BUTTON, button_interrupt_handler, NULL);
 
@@ -62,14 +67,13 @@ void app_main(void)
             alert_user();
             break;
         case DISARMED:
-            vTaskDelay(3000 / portTICK_PERIOD_MS);
+            vTaskDelay(DISARMED_PERIOD_MS);
             state = SETUP;
             break;
         default:
             break;
         }
 
-        printf("%d\n", state);
         vTaskDelay(TICK_PERIOD_MS);
     }
 }
