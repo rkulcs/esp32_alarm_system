@@ -18,6 +18,7 @@ static const double SOUND_US_PER_CM = 58.0;
 static const int SENSOR_SETUP_NUM_SAMPLES = 16;
 static const int MAX_OUT_OF_RANGE_DISTANCES = 2;
 static const int SENSING_NUM_SAMPLES = 4;
+static const double SAFE_DISTANCE_TOLERANCE_CM = 2.0;
 
 struct
 {
@@ -110,10 +111,10 @@ void sensor_set_safe_distances()
         double distance_cm = sensor_get_distance_in_cm();
 
         if (distance_cm < sensor.min_safe_distance)
-            sensor.min_safe_distance = distance_cm;
+            sensor.min_safe_distance = distance_cm - SAFE_DISTANCE_TOLERANCE_CM;
         
         if (distance_cm > sensor.max_safe_distance)
-            sensor.max_safe_distance = distance_cm;
+            sensor.max_safe_distance = distance_cm + SAFE_DISTANCE_TOLERANCE_CM;
 
         vTaskDelay(SENSOR_TIMEOUT_MS);
     }

@@ -35,7 +35,7 @@ void init()
     gpio_set_direction(PIN_BUTTON, GPIO_MODE_INPUT);
     gpio_pullup_dis(PIN_BUTTON);
     gpio_pulldown_en(PIN_BUTTON);
-    gpio_set_intr_type(PIN_BUTTON, GPIO_INTR_LOW_LEVEL);
+    gpio_set_intr_type(PIN_BUTTON, GPIO_INTR_POSEDGE);
     gpio_install_isr_service(0);
     gpio_isr_handler_add(PIN_BUTTON, button_interrupt_handler, NULL);
 
@@ -69,6 +69,7 @@ void app_main(void)
             break;
         }
 
+        printf("%d\n", state);
         vTaskDelay(TICK_PERIOD_MS);
     }
 }
