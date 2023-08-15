@@ -106,8 +106,14 @@ void sensor_set_safe_distances()
     sensor.min_safe_distance = __INT_MAX__;
     sensor.max_safe_distance = 0;
 
+    int time_left_ms = SENSOR_SETUP_NUM_SAMPLES * SENSOR_TIMEOUT_MS * portTICK_PERIOD_MS;
+
     for (int i = 0; i < SENSOR_SETUP_NUM_SAMPLES; i++)
     {
+        char time_left_str[5];
+        sprintf(time_left_str, "%d", time_left_ms);
+        lcd_write_two_lines("Setup time left:", time_left_str);
+
         double distance_cm = sensor_get_distance_in_cm();
 
         if (distance_cm < sensor.min_safe_distance)
@@ -117,6 +123,7 @@ void sensor_set_safe_distances()
             sensor.max_safe_distance = distance_cm + SAFE_DISTANCE_TOLERANCE_CM;
 
         vTaskDelay(SENSOR_TIMEOUT_MS);
+        time_left_ms -= SENSOR_TIMEOUT_MS * portTICK_PERIOD_MS;
     }
 
     ESP_LOGI(TAG, "Minimum safe distance: %.2f cm", sensor.min_safe_distance);

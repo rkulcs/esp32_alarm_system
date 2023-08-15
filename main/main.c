@@ -35,6 +35,7 @@ void init()
 
     i2c_init();
     lcd_init();
+    lcd_clear();
 
     gpio_reset_pin(PIN_BUTTON);
     gpio_set_direction(PIN_BUTTON, GPIO_MODE_INPUT);
@@ -58,6 +59,7 @@ void app_main(void)
         case SETUP:
             sensor_set_safe_distances();
             state = SENSING;
+            lcd_write_one_line("Sensing...");
             break;
         case SENSING:
             if (sensor_detect_intrusion())
@@ -67,6 +69,7 @@ void app_main(void)
             alert_user();
             break;
         case DISARMED:
+            lcd_write_one_line("Disarmed.");
             vTaskDelay(DISARMED_PERIOD_MS);
             state = SETUP;
             break;

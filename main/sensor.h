@@ -7,6 +7,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "lcd1602.h"
+
 void set_up_sensor();
 void sensor_set_safe_distances();
 bool sensor_detect_intrusion();

@@ -28,6 +28,7 @@ static const int POWER_ON_WAIT_US = 55000;
 static const int FUNCTION_SET_SECOND_ATTEMPT_WAIT_US = 4300;
 static const int FUNCTION_SET_REMAINING_ATTEMPTS_WAIT_US = 130;
 static const int POST_FUNCTION_SET_WAIT_US = 2000;
+static const int CLEAR_WAIT_US = 5000;
 
 // I2C settings to use
 static const int DEFAULT_I2C_PORT = 0;
@@ -166,6 +167,7 @@ void lcd_clear()
 
     ESP_ERROR_CHECK(i2c_master_write_to_device(DEFAULT_I2C_PORT, LCD_ADDR, 
             transferrable_data, NUM_TRANSFER_DATA_BYTES, CMD_TICKS_TO_WAIT));
+    usleep(CLEAR_WAIT_US);
 }
 
 void lcd_set_cursor(int y, int x)
@@ -175,6 +177,22 @@ void lcd_set_cursor(int y, int x)
     uint8_t set_cursor_cmd = CMD_BASE_SET_CURSOR;
     set_cursor_cmd |= (y << 6) | x;
     lcd_write_cmd(set_cursor_cmd);
+}
+
+void lcd_write_one_line(char* line)
+{
+    lcd_clear();
+    lcd_set_cursor(0, 0);
+    lcd_write_str(line);
+}
+
+void lcd_write_two_lines(char* line1, char* line2)
+{
+    lcd_clear();
+    lcd_set_cursor(0, 0);
+    lcd_write_str(line1);
+    lcd_set_cursor(1, 0);
+    lcd_write_str(line2);
 }
 
 /**
