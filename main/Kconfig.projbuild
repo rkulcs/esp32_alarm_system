@@ -1,0 +1,15 @@
+# Based on the WiFi example of ESP-IDF.
+menu "WiFi Configuration"
+
+    config ESP_WIFI_SSID
+        string "WiFi SSID"
+        default "ssid"
+        help
+            SSID of the WiFi network to connect to.
+
+    config ESP_WIFI_PASSWORD
+        string "WiFi Password"
+        default "password"
+        help
+            The WiFi network's password.
+endmenu
