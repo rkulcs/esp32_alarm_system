@@ -18,6 +18,9 @@ static const int MAX_NUM_CONNECTION_ATTEMPTS = 5;
 
 static const char* TAG = "Network";
 
+static const char* SERVER_IP = CONFIG_ESP_REMOTE_SERVER_IP;
+static const char* SERVER_PORT = CONFIG_ESP_REMOTE_SERVER_PORT;
+
 static void wifi_event_handler(void* args, esp_event_base_t event_base, int32_t event_id, void* data)
 {
     static int connection_attempt_num = 0;

@@ -13,3 +13,18 @@ menu "WiFi Configuration"
         help
             The WiFi network's password.
 endmenu
+
+menu "Remote Server Configuration"
+
+    config ESP_REMOTE_SERVER_IP
+        string "Remote Server IP Address"
+        default "127.0.0.1"
+        help
+            The IP address of the remote server which stores alerts.
+
+    config ESP_REMOTE_SERVER_PORT
+        string "Remote Server Port Number"
+        default "80"
+        help
+            The port number of the remote server which stores alerts.
+endmenu
