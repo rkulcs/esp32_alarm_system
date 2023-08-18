@@ -17,3 +17,4 @@
 #include "sdkconfig.h"
 
 void set_up_wifi();
+void send_get_request(char* path);
