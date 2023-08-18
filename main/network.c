@@ -18,8 +18,116 @@ static const int MAX_NUM_CONNECTION_ATTEMPTS = 5;
 
 static const char* TAG = "Network";
 
-static const char* SERVER_IP = CONFIG_ESP_REMOTE_SERVER_IP;
-static const char* SERVER_PORT = CONFIG_ESP_REMOTE_SERVER_PORT;
+#define SERVER_IP CONFIG_ESP_REMOTE_SERVER_IP
+#define SERVER_PORT CONFIG_ESP_REMOTE_SERVER_PORT
+
+#define RESPONSE_BUF_LEN 128
+static const int REQUEST_TASK_STACK_SIZE = 4096;
+static const int REQUEST_TASK_PRIORITY = 5;
+static const int RECEIVING_TIMEOUT_US = 5;
+static const int HTTP_INIT_FAILURE_TIMEOUT = 1000 / portTICK_PERIOD_MS;
+static const int HTTP_TRANSMISSION_FAILURE_TIMEOUT = 4000 / portTICK_PERIOD_MS;
+static const int HTTP_REQUEST_TIMEOUT = 250 / portTICK_PERIOD_MS;
+
+const struct addrinfo hints = {
+    .ai_family = AF_INET,
+    .ai_socktype = SOCK_STREAM
+};
+
+/**
+ * Sends the provided HTTP request to the remote server.
+ * 
+ * @param args An HTTP request string.
+ */
+static void http_request_task(void* args)
+{
+    char* request = (char*) args;
+
+    struct addrinfo* response;
+    struct in_addr* addr;
+
+    int sock, response_len;
+    char response_buf[RESPONSE_BUF_LEN];
+
+    while (true)
+    {
+        // Perform DNS lookup
+        int err = getaddrinfo(SERVER_IP, SERVER_PORT, &hints, &response);
+
+        if (err != 0 || response == NULL)
+        {
+            ESP_LOGE(TAG, "DNS lookup failed with error %d.", err);
+            vTaskDelay(HTTP_INIT_FAILURE_TIMEOUT);
+            continue;
+        }
+        else
+        {
+            addr = &((struct sockaddr_in*) response->ai_addr)->sin_addr;
+        }
+
+        // Allocate socket
+        sock = socket(response->ai_family, response->ai_socktype, 0);
+
+        if (sock < 0)
+        {
+            ESP_LOGE(TAG, "Socket allocation failed.");
+            freeaddrinfo(response);
+            vTaskDelay(HTTP_INIT_FAILURE_TIMEOUT);
+            continue;
+        }
+
+        // Attempt to connect
+        if (connect(sock, response->ai_addr, response->ai_addrlen) != 0)
+        {
+            ESP_LOGE(TAG, "Socket connection failed.");
+            close(sock);
+            freeaddrinfo(response);
+            vTaskDelay(HTTP_TRANSMISSION_FAILURE_TIMEOUT);
+            continue;
+        }
+
+        freeaddrinfo(response);
+
+        // Send HTTP request
+        if (write(sock, request, strlen(request)) < 0)
+        {
+            ESP_LOGE(TAG, "Failed to send request.");
+            close(sock);
+            vTaskDelay(HTTP_TRANSMISSION_FAILURE_TIMEOUT);
+            continue;
+        }
+
+        // Configure response receiving timeout
+        struct timeval receiving_timeout = {
+            .tv_sec = 0,
+            .tv_usec = RECEIVING_TIMEOUT_US
+        };
+
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0)
+        {
+            ESP_LOGE(TAG, "Failed to set response receiving timeout.");
+            close(sock);
+            vTaskDelay(HTTP_TRANSMISSION_FAILURE_TIMEOUT);
+            continue;
+        }
+
+        // Display response
+        do
+        {
+            bzero(response_buf, sizeof(response_buf));
+            response_len = read(sock, response_buf, sizeof(response_buf) - 1);
+
+            for (int i = 0; i < response_len; i++)
+                putchar(response_buf[i]);
+        } while (response_len > 0);
+        
+        close(sock);
+        vTaskDelay(HTTP_REQUEST_TIMEOUT);
+
+        // Terminate task
+        vTaskDelete(NULL);
+    }
+}
 
 static void wifi_event_handler(void* args, esp_event_base_t event_base, int32_t event_id, void* data)
 {
@@ -72,8 +180,6 @@ void set_up_wifi()
     wifi_event_group = xEventGroupCreate();
 
     ESP_ERROR_CHECK(esp_netif_init());
-
-    // TODO: Remove if not needed
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     // Initialize WiFi
@@ -81,7 +187,6 @@ void set_up_wifi()
     wifi_init_config_t init_conf = WIFI_INIT_CONFIG_DEFAULT();
     // ESP_ERROR_CHECK(esp_wifi_init(&init_conf));
     int err = esp_wifi_init(&init_conf);
-    printf("%d\n", err);
 
     // Set up event handlers
     esp_event_handler_instance_t any_id_handler;
@@ -116,4 +221,15 @@ void set_up_wifi()
         ESP_LOGE(TAG, "Failed to connect to the WiFi network.");
     else
         ESP_LOGE(TAG, "An unexpected event occurred while trying to connect to the network.");
+}
+
+void send_get_request(char* path)
+{
+    char* request = "GET / HTTP/1.0\r\n"
+        "Host: " SERVER_IP ":" SERVER_PORT "\r\n"
+        "User-Agent: esp-idf/1.0 esp32\r\n"
+        "\r\n";
+
+    xTaskCreate(&http_request_task, "http_request_task", REQUEST_TASK_STACK_SIZE, 
+        (void*) request, REQUEST_TASK_PRIORITY, NULL);
 }
