@@ -1,9 +1,11 @@
 package alarm.system.server.api;
 
+import alarm.system.server.auth.Authenticator;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,8 +19,22 @@ public class AlarmController {
 
     private final FirebaseMessaging FIREBASE_MESSAGING;
 
+    @Autowired
+    private Authenticator authenticator;
+
     public AlarmController(FirebaseMessaging firebaseMessaging) {
         FIREBASE_MESSAGING = firebaseMessaging;
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody String loginDetails) {
+
+        try {
+            String token = authenticator.requestTokenFromGIT(loginDetails);
+            return ResponseEntity.ok(token);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     @PostMapping("/post-alarm")
