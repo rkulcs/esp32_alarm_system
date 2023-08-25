@@ -27,4 +27,21 @@ menu "Remote Server Configuration"
         default "80"
         help
             The port number of the remote server which stores alerts.
+
+endmenu
+
+menu "Firebase Authentication"
+
+    config ESP_AUTH_EMAIL
+        string "Firebase Application Email"
+        default "test@example.com"
+        help
+            The email used to log into the Firebase application for sending notifications.
+    
+    config ESP_AUTH_PASSWORD
+        string "Firebase Application Password"
+        default "testPassword"
+        help
+            The password used to log into the Firebase application for sending notifications.
+
 endmenu

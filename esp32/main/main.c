@@ -7,6 +7,7 @@
 #include "sensor.h"
 #include "lcd1602.h"
 #include "network.h"
+#include "client.h"
 
 static const int TICK_PERIOD_MS = 250 / portTICK_PERIOD_MS;
 static const int DISARMED_PERIOD_MS = 3000 / portTICK_PERIOD_MS;
@@ -34,6 +35,7 @@ void init()
     set_up_alarm();
     set_up_sensor();
     set_up_wifi();
+    set_up_client();
 
     i2c_init();
     lcd_init();
@@ -54,7 +56,7 @@ void app_main(void)
 {
     init();
 
-    while (true)
+    while (false)
     {
         switch (state)
         {

@@ -113,18 +113,10 @@ static void http_request_task(void* args)
             continue;
         }
 
-        // Display response
+        // Store response
         bzero(response_buf, sizeof(response_buf));
         response_len = read(sock, response_buf, sizeof(response_buf) - 1);
-
-        // bzero(http_response, sizeof(http_response));
-        // strlcpy(http_response, response_buf, sizeof(http_response));
-
-        // printf("Copied %s\n", http_response);
         xSemaphoreGive(http_response_sem);
-
-        // for (int i = 0; i < response_len; i++)
-        //     putchar(response_buf[i]);
 
         close(sock);
         vTaskDelay(HTTP_REQUEST_TIMEOUT);
