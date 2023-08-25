@@ -1,8 +1,11 @@
 #pragma once
 
+#include <string.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "freertos/semphr.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -17,4 +20,4 @@
 #include "sdkconfig.h"
 
 void set_up_wifi();
-void send_get_request(char* path);
+char* send_request(char* request);

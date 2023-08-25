@@ -1,11 +1,11 @@
 /**
- * Functions for connecting to a WiFi network and sending HTTP requests.
- * Based on the WiFi station example of ESP-IDF.
+ *  Functions for connecting to a WiFi network and sending HTTP requests.
+ *  Based on the WiFi station example of ESP-IDF.
  */
 #include "network.h"
 
 #define WIFI_SSID CONFIG_ESP_WIFI_SSID
-#define WIFI_PASSWORD CONFIG_ESP_WIFI_PASSWORD 
+#define WIFI_PASSWORD CONFIG_ESP_WIFI_PASSWORD
 
 #define WIFI_SAE_MODE WPA3_SAE_PWE_BOTH
 #define WIFI_H2E_ID ""
@@ -21,23 +21,27 @@ static const char* TAG = "Network";
 #define SERVER_IP CONFIG_ESP_REMOTE_SERVER_IP
 #define SERVER_PORT CONFIG_ESP_REMOTE_SERVER_PORT
 
-#define RESPONSE_BUF_LEN 128
+#define RESPONSE_BUF_LEN 2048
 static const int REQUEST_TASK_STACK_SIZE = 4096;
 static const int REQUEST_TASK_PRIORITY = 5;
 static const int RECEIVING_TIMEOUT_US = 5;
 static const int HTTP_INIT_FAILURE_TIMEOUT = 1000 / portTICK_PERIOD_MS;
 static const int HTTP_TRANSMISSION_FAILURE_TIMEOUT = 4000 / portTICK_PERIOD_MS;
 static const int HTTP_REQUEST_TIMEOUT = 250 / portTICK_PERIOD_MS;
+static const TickType_t RESPONSE_SEM_TIMEOUT = 100;
 
 const struct addrinfo hints = {
     .ai_family = AF_INET,
     .ai_socktype = SOCK_STREAM
 };
 
+static char response_buf[RESPONSE_BUF_LEN];
+static SemaphoreHandle_t http_response_sem;
+
 /**
- * Sends the provided HTTP request to the remote server.
+ *  Sends the provided HTTP request to the remote server.
  * 
- * @param args An HTTP request string.
+ *  @param args An HTTP request string.
  */
 static void http_request_task(void* args)
 {
@@ -47,7 +51,6 @@ static void http_request_task(void* args)
     struct in_addr* addr;
 
     int sock, response_len;
-    char response_buf[RESPONSE_BUF_LEN];
 
     while (true)
     {
@@ -100,8 +103,7 @@ static void http_request_task(void* args)
         // Configure response receiving timeout
         struct timeval receiving_timeout = {
             .tv_sec = 0,
-            .tv_usec = RECEIVING_TIMEOUT_US
-        };
+            .tv_usec = RECEIVING_TIMEOUT_US};
 
         if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0)
         {
@@ -112,15 +114,18 @@ static void http_request_task(void* args)
         }
 
         // Display response
-        do
-        {
-            bzero(response_buf, sizeof(response_buf));
-            response_len = read(sock, response_buf, sizeof(response_buf) - 1);
+        bzero(response_buf, sizeof(response_buf));
+        response_len = read(sock, response_buf, sizeof(response_buf) - 1);
 
-            for (int i = 0; i < response_len; i++)
-                putchar(response_buf[i]);
-        } while (response_len > 0);
-        
+        // bzero(http_response, sizeof(http_response));
+        // strlcpy(http_response, response_buf, sizeof(http_response));
+
+        // printf("Copied %s\n", http_response);
+        xSemaphoreGive(http_response_sem);
+
+        // for (int i = 0; i < response_len; i++)
+        //     putchar(response_buf[i]);
+
         close(sock);
         vTaskDelay(HTTP_REQUEST_TIMEOUT);
 
@@ -191,11 +196,11 @@ void set_up_wifi()
     // Set up event handlers
     esp_event_handler_instance_t any_id_handler;
     esp_event_handler_instance_t got_ip_handler;
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, 
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
                                                         &wifi_event_handler, NULL, &any_id_handler));
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
                                                         &wifi_event_handler, NULL, &got_ip_handler));
-    
+
     // Configure WiFi station
     wifi_config_t wifi_conf = {
         .sta = {
@@ -211,7 +216,7 @@ void set_up_wifi()
 
     // Try to connect to the WiFi network
     ESP_ERROR_CHECK(esp_wifi_start());
-    EventBits_t event_bits = xEventGroupWaitBits(wifi_event_group, 
+    EventBits_t event_bits = xEventGroupWaitBits(wifi_event_group,
                                                  WIFI_CONNECTED_BIT | WIFI_FAILED_BIT,
                                                  pdFALSE, pdFALSE, portMAX_DELAY);
 
@@ -221,15 +226,20 @@ void set_up_wifi()
         ESP_LOGE(TAG, "Failed to connect to the WiFi network.");
     else
         ESP_LOGE(TAG, "An unexpected event occurred while trying to connect to the network.");
+
+    http_response_sem = xSemaphoreCreateBinary();
 }
 
-void send_get_request(char* path)
+char* send_request(char* request)
 {
-    char* request = "GET / HTTP/1.0\r\n"
-        "Host: " SERVER_IP ":" SERVER_PORT "\r\n"
-        "User-Agent: esp-idf/1.0 esp32\r\n"
-        "\r\n";
+    xSemaphoreTake(http_response_sem, RESPONSE_SEM_TIMEOUT);
+    ESP_LOGI(TAG, "Sending HTTP request...");
+    xTaskCreate(&http_request_task, "http_request_task", REQUEST_TASK_STACK_SIZE,
+                (void*) request, REQUEST_TASK_PRIORITY, NULL);
 
-    xTaskCreate(&http_request_task, "http_request_task", REQUEST_TASK_STACK_SIZE, 
-        (void*) request, REQUEST_TASK_PRIORITY, NULL);
+    xSemaphoreTake(http_response_sem, RESPONSE_SEM_TIMEOUT);
+    ESP_LOGI(TAG, "Received HTTP response.");
+    xSemaphoreGive(http_response_sem);
+
+    return &response_buf;
 }
