@@ -7,6 +7,8 @@
 #define PASSWORD CONFIG_ESP_AUTH_PASSWORD
 #define MAX_TOKEN_LENGTH 1026
 
+static const char* TAG = "Client";
+
 static const char* COMMON_LOGIN_HEADERS = "POST /login HTTP/1.1\r\n"
                     "Host: " SERVER_IP ":" SERVER_PORT "\r\n"
                     "User-Agent: esp-idf/1.0 esp32\r\n"
@@ -25,6 +27,8 @@ static char token[MAX_TOKEN_LENGTH];
 static char auth_header[MAX_TOKEN_LENGTH + 15];
 
 static const int ALARM_TIMEOUT = 250 / portTICK_PERIOD_MS;
+
+static const char* ALARM_REQUEST_SUCCESS_CODE = "202";
 
 void update_token()
 {
@@ -70,8 +74,20 @@ void send_alarm_message()
 
     while (true)
     {
-        send_request(alarm_http_request);
-        ESP_LOGI("test", "DONE");
+        char* response = send_request(alarm_http_request);
+
+        // Check the status code in the first line of the response
+        char* first_line = strtok(response, "\n");
+
+        if (strtok(first_line, ALARM_REQUEST_SUCCESS_CODE) != NULL)
+        {
+            ESP_LOGI(TAG, "Successfully sent the alarm message to the server.");
+        }
+        else
+        {
+            ESP_LOGE(TAG, "Failed to send the alarm message to the server.");
+            continue;
+        }
         
         vTaskDelay(ALARM_TIMEOUT);
         vTaskDelete(NULL);

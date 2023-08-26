@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string.h>
+#include "esp_log.h"
 
 #include "network.h"
 
