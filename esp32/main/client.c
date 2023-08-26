@@ -24,6 +24,8 @@ static char alarm_http_request[MAX_TOKEN_LENGTH + 256];
 static char token[MAX_TOKEN_LENGTH];
 static char auth_header[MAX_TOKEN_LENGTH + 15];
 
+static const int ALARM_TIMEOUT = 250 / portTICK_PERIOD_MS;
+
 void update_token()
 {
     char* response = send_request(token_http_request);
@@ -66,5 +68,12 @@ void send_alarm_message()
     snprintf(alarm_http_request, sizeof(alarm_http_request), "%s%s\r\n%s", 
             COMMON_ALARM_HEADERS, auth_header, remaining_headers);
 
-    send_request(alarm_http_request);
+    while (true)
+    {
+        send_request(alarm_http_request);
+        ESP_LOGI("test", "DONE");
+        
+        vTaskDelay(ALARM_TIMEOUT);
+        vTaskDelete(NULL);
+    }
 }

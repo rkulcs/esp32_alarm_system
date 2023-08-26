@@ -9,6 +9,9 @@
 #include "network.h"
 #include "client.h"
 
+static const int SERVER_ALARM_STACK_SIZE = 8192;
+static const int SERVER_ALARM_TASK_PRIORITY = 1;
+
 static const int TICK_PERIOD_MS = 250 / portTICK_PERIOD_MS;
 static const int DISARMED_PERIOD_MS = 3000 / portTICK_PERIOD_MS;
 
@@ -68,8 +71,9 @@ void app_main(void)
         case SENSING:
             if (sensor_detect_intrusion())
             {
+                xTaskCreate(send_alarm_message, "send_alarm_message", 
+                    SERVER_ALARM_STACK_SIZE, NULL, SERVER_ALARM_TASK_PRIORITY, NULL);
                 state = ALARMED;
-                send_alarm_message();
             }
             break;
         case ALARMED:
