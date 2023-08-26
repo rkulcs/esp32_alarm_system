@@ -56,7 +56,7 @@ void app_main(void)
 {
     init();
 
-    while (false)
+    while (true)
     {
         switch (state)
         {
@@ -67,7 +67,10 @@ void app_main(void)
             break;
         case SENSING:
             if (sensor_detect_intrusion())
+            {
                 state = ALARMED;
+                send_alarm_message();
+            }
             break;
         case ALARMED:
             alert_user();

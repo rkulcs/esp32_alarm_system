@@ -19,12 +19,13 @@ static const char* COMMON_ALARM_HEADERS = "POST /post-alarm HTTP/1.1\r\n"
                     "Content-Type: application/json\r\n";
 
 static char token_http_request[256];
+static char alarm_http_request[MAX_TOKEN_LENGTH + 256];
 
 static char token[MAX_TOKEN_LENGTH];
+static char auth_header[MAX_TOKEN_LENGTH + 15];
 
 void update_token()
 {
-    printf("%s", token_http_request);
     char* response = send_request(token_http_request);
 
     // Parse each line of the response, and store the last line as the token
@@ -40,6 +41,12 @@ void update_token()
     strlcpy(token, token_substr, sizeof(token));
 }
 
+void update_auth_header()
+{
+    bzero(auth_header, sizeof(auth_header));
+    snprintf(auth_header, sizeof(auth_header), "%s%s", "Authorization: ", token);
+}
+
 void set_up_client()
 {
     // Set up HTTP request for getting tokens
@@ -47,4 +54,17 @@ void set_up_client()
         COMMON_LOGIN_HEADERS, "Content-Length: ", strlen(LOGIN_BODY), LOGIN_BODY);
     
     update_token();
+    update_auth_header();
+}
+
+void send_alarm_message()
+{
+    static char* remaining_headers = "Content-Length: 32\r\n"
+                                    "\r\n"
+                                    "{\"subject\": \"Intruder detected\"}";
+    bzero(alarm_http_request, sizeof(alarm_http_request));
+    snprintf(alarm_http_request, sizeof(alarm_http_request), "%s%s\r\n%s", 
+            COMMON_ALARM_HEADERS, auth_header, remaining_headers);
+
+    send_request(alarm_http_request);
 }
