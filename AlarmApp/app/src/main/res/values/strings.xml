@@ -1,3 +1,9 @@
 <resources>
-    <string name="app_name">Alarm App</string>
+    <string name="app_name">ESP32 Alarm App</string>
+
+    <string name="successful_subscription">Successfully subscribed to the alarm topic</string>
+    <string name="unsuccessful_subscription">Failed to subscribe to the alarm topic</string>
+
+    <string name="notification_title">Alarm</string>
+    <string name="notification_text">Intruder detected</string>
 </resources>
