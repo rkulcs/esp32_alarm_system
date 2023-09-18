@@ -9,4 +9,6 @@
 
     <string name="notification_channel_id">fcm_default_channel</string>
     <string name="notification_channel_name">Alarm</string>
+
+    <string name="notifications_history">Alarm History</string>
 </resources>
