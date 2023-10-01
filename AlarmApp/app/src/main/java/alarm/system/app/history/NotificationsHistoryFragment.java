@@ -1,16 +1,29 @@
 package alarm.system.app.history;
 
+import static android.content.Context.MODE_PRIVATE;
+import static android.media.CamcorderProfile.getAll;
+
+import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import alarm.system.app.R;
 
@@ -25,14 +38,29 @@ public class NotificationsHistoryFragment extends Fragment {
 
     private List<String> notifications;
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
 
-        // TODO: Load notifications
         notifications = new ArrayList<>();
-        notifications.add("test");
+
+        SharedPreferences sharedPreferences = getContext().getSharedPreferences(
+                getString(R.string.notifications_history_file), MODE_PRIVATE
+        );
+
+        Set<String> notificationTimes = sharedPreferences.getAll().keySet();
+        DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM);
+
+        for (String time : notificationTimes)
+        {
+            String formattedTime = formatter.format(Instant.ofEpochMilli(
+                    Long.parseLong(time)).atZone(ZoneId.systemDefault()).toLocalDateTime()
+            );
+
+            notifications.add(formattedTime);
+        }
     }
 
     public View onCreateView(LayoutInflater inflater, ViewGroup viewGroup,

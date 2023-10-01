@@ -11,4 +11,6 @@
     <string name="notification_channel_name">Alarm</string>
 
     <string name="notifications_history">Alarm History</string>
+
+    <string name="notifications_history_file">esp32_alarm_history</string>
 </resources>
