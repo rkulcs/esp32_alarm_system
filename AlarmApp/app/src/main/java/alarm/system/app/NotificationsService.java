@@ -17,6 +17,8 @@ import com.google.firebase.messaging.RemoteMessage;
 
 import java.time.LocalDateTime;
 
+import alarm.system.app.util.IntentExtraNames;
+
 public class NotificationsService extends FirebaseMessagingService {
 
     private static final String TAG = "NotificationsService";
@@ -59,21 +61,11 @@ public class NotificationsService extends FirebaseMessagingService {
 
     private void saveMessage(String message) {
 
-        SharedPreferences sharedPreferences = getSharedPreferences(
-                getString(R.string.notifications_history_file), MODE_PRIVATE
-        );
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-
-        String time = Long.toString(System.currentTimeMillis());
-
-        editor.putString(time, message);
-        editor.apply();
-
         LocalBroadcastManager manager = LocalBroadcastManager.getInstance(getBaseContext());
 
         Intent intent = new Intent(NOTIFICATION_SERVICE);
-        intent.putExtra("time", time);
-        intent.putExtra("message", message);
+        intent.putExtra(IntentExtraNames.TIME, Long.toString(System.currentTimeMillis()));
+        intent.putExtra(IntentExtraNames.MESSAGE, message);
         manager.sendBroadcast(intent);
     }
 

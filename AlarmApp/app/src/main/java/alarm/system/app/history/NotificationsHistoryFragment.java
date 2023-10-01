@@ -28,14 +28,17 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import alarm.system.app.NotificationsService;
 import alarm.system.app.R;
+import alarm.system.app.util.IntentExtraNames;
 
 /**
  * Fragment for displaying alarm notifications as a list.
@@ -52,32 +55,22 @@ public class NotificationsHistoryFragment extends Fragment {
 
     private DateTimeFormatter formatter;
 
+    private SharedPreferences sharedPreferences;
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-
         formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM);
-
         notifications = new ArrayList<>();
+
+        sharedPreferences = getContext().getSharedPreferences(
+                getString(R.string.notifications_history_file), MODE_PRIVATE
+        );
+
         loadNotificationsHistory();
-
-        broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-
-                System.out.println("Test");
-                Bundle extras = intent.getExtras();
-                String time = (String) extras.get("time");
-                String message = (String) extras.get("message");
-
-                String newEntry = formatNotificationHistoryEntry(time, message);
-                int position = notifications.size();
-                notifications.add(newEntry);
-                recyclerView.getAdapter().notifyItemInserted(position);
-            }
-        };
+        initBroadcastReceiver();
     }
 
     @Override
@@ -112,14 +105,27 @@ public class NotificationsHistoryFragment extends Fragment {
         return view;
     }
 
+    private void initBroadcastReceiver() {
+
+        broadcastReceiver = new BroadcastReceiver() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            @Override
+            public void onReceive(Context context, Intent intent) {
+
+                Bundle extras = intent.getExtras();
+                String time = (String) extras.get(IntentExtraNames.TIME);
+                String message = (String) extras.get(IntentExtraNames.MESSAGE);
+                addNotificationToHistory(time, message);
+            }
+        };
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void loadNotificationsHistory() {
 
-        SharedPreferences sharedPreferences = getContext().getSharedPreferences(
-                getString(R.string.notifications_history_file), MODE_PRIVATE
-        );
-
-        Set<String> notificationTimes = sharedPreferences.getAll().keySet();
+        List<String> notificationTimes = sharedPreferences.getAll()
+                .keySet().stream().sorted(Comparator.reverseOrder())
+                .collect(Collectors.toList());
 
         for (String time : notificationTimes)
         {
@@ -136,6 +142,16 @@ public class NotificationsHistoryFragment extends Fragment {
         );
 
         return String.format("%s\n%s", formattedTime, message);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void addNotificationToHistory(String time, String message) {
+
+        sharedPreferences.edit().putString(time, message).apply();
+
+        String newEntry = formatNotificationHistoryEntry(time, message);
+        notifications.add(0, newEntry);
+        recyclerView.getAdapter().notifyItemInserted(0);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
