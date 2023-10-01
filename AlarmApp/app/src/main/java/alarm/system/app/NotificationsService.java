@@ -1,5 +1,6 @@
 package alarm.system.app;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -8,6 +9,8 @@ import android.util.Log;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -61,8 +64,17 @@ public class NotificationsService extends FirebaseMessagingService {
         );
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
-        editor.putString(Long.toString(System.currentTimeMillis()), message);
+        String time = Long.toString(System.currentTimeMillis());
+
+        editor.putString(time, message);
         editor.apply();
+
+        LocalBroadcastManager manager = LocalBroadcastManager.getInstance(getBaseContext());
+
+        Intent intent = new Intent(NOTIFICATION_SERVICE);
+        intent.putExtra("time", time);
+        intent.putExtra("message", message);
+        manager.sendBroadcast(intent);
     }
 
     private String extractMessageFromJson(String messageJson) {

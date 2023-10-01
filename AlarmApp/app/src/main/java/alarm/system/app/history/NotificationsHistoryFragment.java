@@ -4,6 +4,10 @@ import static android.content.Context.MODE_PRIVATE;
 import static android.media.CamcorderProfile.getAll;
 
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -14,6 +18,7 @@ import android.widget.Button;
 
 import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -29,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import alarm.system.app.NotificationsService;
 import alarm.system.app.R;
 
 /**
@@ -42,14 +48,47 @@ public class NotificationsHistoryFragment extends Fragment {
 
     private List<String> notifications;
 
+    private BroadcastReceiver broadcastReceiver;
+
+    private DateTimeFormatter formatter;
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
 
+        formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM);
+
         notifications = new ArrayList<>();
         loadNotificationsHistory();
+
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+
+                System.out.println("Test");
+                Bundle extras = intent.getExtras();
+                String time = (String) extras.get("time");
+                String message = (String) extras.get("message");
+
+                String newEntry = formatNotificationHistoryEntry(time, message);
+                int position = notifications.size();
+                notifications.add(newEntry);
+                recyclerView.getAdapter().notifyItemInserted(position);
+            }
+        };
+    }
+
+    @Override
+    public void onStart() {
+
+        super.onStart();
+
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
+                broadcastReceiver,
+                new IntentFilter(NotificationsService.NOTIFICATION_SERVICE)
+        );
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -81,17 +120,22 @@ public class NotificationsHistoryFragment extends Fragment {
         );
 
         Set<String> notificationTimes = sharedPreferences.getAll().keySet();
-        DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM);
 
         for (String time : notificationTimes)
         {
-            String formattedTime = formatter.format(Instant.ofEpochMilli(
-                    Long.parseLong(time)).atZone(ZoneId.systemDefault()).toLocalDateTime()
-            );
-
             String message = sharedPreferences.getString(time, "No message");
-            notifications.add(String.format("%s\n%s", formattedTime, message));
+            notifications.add(formatNotificationHistoryEntry(time, message));
         }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private String formatNotificationHistoryEntry(String time, String message) {
+
+        String formattedTime = formatter.format(Instant.ofEpochMilli(
+                Long.parseLong(time)).atZone(ZoneId.systemDefault()).toLocalDateTime()
+        );
+
+        return String.format("%s\n%s", formattedTime, message);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
