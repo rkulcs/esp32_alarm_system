@@ -28,8 +28,9 @@ public class NotificationsService extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage message) {
 
         Log.d(TAG, "Message received");
-        sendNotification(message.getData().get(NOTIFICATION_BODY_KEY));
-        saveMessage(message.getData().get(NOTIFICATION_BODY_KEY));
+        String formattedMessage = extractMessageFromJson(message.getData().get(NOTIFICATION_BODY_KEY));
+        sendNotification(formattedMessage);
+        saveMessage(formattedMessage);
     }
 
     @Override
@@ -62,5 +63,12 @@ public class NotificationsService extends FirebaseMessagingService {
 
         editor.putString(Long.toString(System.currentTimeMillis()), message);
         editor.apply();
+    }
+
+    private String extractMessageFromJson(String messageJson) {
+
+        return messageJson.split(":")[1]
+                .trim().replace("\"", "")
+                .replace("}", "");
     }
 }
