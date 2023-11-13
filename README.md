@@ -66,3 +66,9 @@ When the system is initialized, the sensor is used to calculate the distance to 
    ```console
    $ idf.py build flash
    ```
+
+**Android Application**
+
+1. In the project overview of the Firebase Console, click on the *Add app* button.
+2. Add a new Android application with the package name *alarm.system.app*, and follow the setup instructions.
+3. Open and build the project using Android Studio.
