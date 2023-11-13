@@ -28,3 +28,41 @@ When the system is initialized, the sensor is used to calculate the distance to 
 ### Circuit
 
 <img src="https://github.com/rkulcs/esp32_alarm_system/assets/50153954/e0d8ac77-84f5-4762-8ceb-49f86a10c336" width="60%" />
+
+### Installation and Configuration
+
+**Firebase Application and User Account**
+
+1. Go to the [Firebase Console](https://console.firebase.google.com), and create a new project.
+2. Go to authentication, and create a new application user account. This account does not require the use of a real email address or phone number.
+
+**Spring Boot Server Application**
+
+1. Find the Firebase project's web API key in the project settings.
+2. Edit the *server/src/main/resources/application.properties* file of the Spring Boot project to update the server IP and port number if needed, and to add the Firebase web API key.
+3. Under the *Service accounts* tab of the Firebase project settings, select *Firebase Admin SDK*, then click on *Generate new private key*. This will download a JSON file.
+4. Rename the JSON file to *firebase-service-account.json*, and move it to *server/src/main/resources/application.properties*.
+5. Build and run the server.
+   ```console
+   $ cd server
+   $ ./mvnw spring-boot:run
+   ```
+
+**ESP32 Alarm System**
+
+1. Add the ESP-IDF tools to the path.
+   ```console
+   $ get_idf
+   ```
+2. Go to the *esp32* directory, and open the configuration menu.
+   ```console
+   $ cd esp32
+   $ idf.py menuconfig
+   ```
+   - Choose the "WiFi Configuration" option, and enter the credentials of the WiFi network to use.
+   - In the "Remote Server Configuration" submenu, set the IP address and port number of the Spring Boot server.
+   - In the "Firebase Authentication" submenu, set the email address and password of the Firebase application user account.
+3. Build the application and flash the ESP32 WROVER.
+   ```console
+   $ idf.py build flash
+   ```
