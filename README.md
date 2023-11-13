@@ -72,3 +72,18 @@ When the system is initialized, the sensor is used to calculate the distance to 
 1. In the project overview of the Firebase Console, click on the *Add app* button.
 2. Add a new Android application with the package name *alarm.system.app*, and follow the setup instructions.
 3. Open and build the project using Android Studio.
+
+### Photos and Screenshots
+
+Setup state<br>
+<img src="https://github.com/rkulcs/esp32_alarm_system/assets/50153954/3962ba12-64d8-4a8b-8107-661e85dfc471" width="60%" /><br>
+Sensing state<br>
+<img src="https://github.com/rkulcs/esp32_alarm_system/assets/50153954/caeb4d91-d32e-43f8-9f75-0f4d1bca7373" width="60%" /><br>
+Alarmed state<br>
+<img src="https://github.com/rkulcs/esp32_alarm_system/assets/50153954/80ac9ccc-eda2-411e-9327-3dde34bffd70" width="60%" /><br>
+Disarmed state<br>
+<img src="https://github.com/rkulcs/esp32_alarm_system/assets/50153954/9b7c42a7-a972-49ad-9a78-ad73a3598988" width="60%" /><br>
+
+Android application<br>
+<img src="https://github.com/rkulcs/esp32_alarm_system/assets/50153954/2a0844eb-7f33-4d30-8c00-6f9a76f74fea" width="30%" />
+<img src="https://github.com/rkulcs/esp32_alarm_system/assets/50153954/91fdfc2a-8208-45d1-9556-8823719e7720" width="30%" />
