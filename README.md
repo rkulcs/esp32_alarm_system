@@ -27,7 +27,7 @@ When the system is initialized, the sensor is used to calculate the distance to 
 
 ### Circuit
 
-<img src="https://github.com/rkulcs/esp32_alarm_system/assets/50153954/e0d8ac77-84f5-4762-8ceb-49f86a10c336" width="60%" />
+<img src="https://github.com/rkulcs/esp32_alarm_system/assets/50153954/8f3fbc00-0a55-4838-a028-ee3fea954477" width="60%" />
 
 ### Installation and Configuration
 
