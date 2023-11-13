@@ -46,8 +46,6 @@ void init()
 
     gpio_reset_pin(PIN_BUTTON);
     gpio_set_direction(PIN_BUTTON, GPIO_MODE_INPUT);
-    gpio_pullup_dis(PIN_BUTTON);
-    gpio_pulldown_en(PIN_BUTTON);
     gpio_set_intr_type(PIN_BUTTON, GPIO_INTR_LOW_LEVEL);
     gpio_install_isr_service(0);
     gpio_isr_handler_add(PIN_BUTTON, button_interrupt_handler, NULL);
@@ -71,9 +69,9 @@ void app_main(void)
         case SENSING:
             if (sensor_detect_intrusion())
             {
+                state = ALARMED;
                 xTaskCreate(send_alarm_message, "send_alarm_message", 
                     SERVER_ALARM_STACK_SIZE, NULL, SERVER_ALARM_TASK_PRIORITY, NULL);
-                state = ALARMED;
             }
             break;
         case ALARMED:
